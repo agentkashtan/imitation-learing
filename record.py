@@ -1,86 +1,139 @@
 import argparse
 import logging
+import os
+import time
+
 from pynput import keyboard
 import cv2
 import numpy as np
+import h5py
 
-from lerobot.robots.so101_follower import SO101FollowerConfig, SO101Follower
-from lerobot.teleoperators.so101_leader import SO101LeaderConfig, SO101Leader
-from lerobot.cameras.opencv.configuration_opencv import OpenCVCameraConfig
+from system_config import get_leader, get_follower, CONFIG
+
+
+def wait_(seconds):
+    end = time.perf_counter() + seconds
+    while time.perf_counter() < end:
+        pass
 
 
 def init_listeners():
-	event = {
-		"repeat": False,
-		"stop": False,
-		"next": False,
-	}
-	def on_press(key):
-		if key == keyboard.Key.delete:
-			event["repeat"] = True
-		if key == keyboard.Key.esc:
-			event["stop"] = True
-		if key == keyboard.Key.enter:
-			event["next"] = True
-	listener = keyboard.Listener(on_press=on_press)
-	listener.start()
-	return listener, event
+    event = {
+        "repeat": False,
+        "stop": False,
+        "next": False,
+    }
+    def on_press(key):
+        if key == keyboard.Key.backspace:
+            event["repeat"] = True
+        if key == keyboard.Key.esc:
+            event["stop"] = True
+        if key == keyboard.Key.enter:
+            event["next"] = True
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+    return listener, event
+
+
+def record_episode(
+        config,
+        event
+):
+    episode_data = list()
+    while True:
+        loop_start = time.perf_counter()
+        if event["stop"] or event["repeat"] or event["next"]:
+            return episode_data, event
+        leader_obs = config['leader'].get_action()
+        follower_obs = config['follower'].get_observation()
+        data = {
+            'robot_state': [leader_obs['shoulder_pan.pos'], leader_obs['shoulder_lift.pos'], leader_obs['elbow_flex.pos'],
+             leader_obs['wrist_flex.pos'], leader_obs['wrist_roll.pos'], leader_obs['gripper.pos']],
+        }
+        for cam_key, _ in config['follower'].cameras.items():
+            data[cam_key] = follower_obs[cam_key]
+        episode_data.append(data)
+        loop_time = time.perf_counter() - loop_start
+        wait_(1 / config['fps'] - loop_time)
+
+
+def save_episode_data(episode_data, episode_num, config):
+    logging.info(f"Saving recording for {episode_num}")
+    os.makedirs(config['save_path'], exist_ok=True)
+    with h5py.File(os.path.join(config['save_path'], f"{episode_num}.hdf5"), "w") as f:
+        robot_state = np.array([x['robot_state'] for x in episode_data], dtype=np.float32)
+        f.create_dataset("robot_state", data=robot_state)
+
+        for cam_key, _ in config['follower'].cameras.items():
+            camera_data = np.array([x[cam_key] for x in episode_data], dtype=np.float32)
+            f.create_dataset(cam_key, data=camera_data)
+
+    logging.info(f"Recording for {episode_num} is saved")
+
 
 def main():
-	parser = argparse.ArgumentParser()
+    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser()
        
-	parser.add_argument(
-		"--episode-index",
-		type=int,
-		required=True,
+    parser.add_argument(
+        "--episode-number",
+        type=int,
+        required=True,
         )
-	parser.add_argument(
+    parser.add_argument(
                 "--total-episodes-number",
                 type=int,
                 required=True,
         )
-	args = parser.parse_args()
-	episode_ind = args.episode_index
-	total_episodes_num = args.total_episodes_number
-	
-	camera_config = {
-	    "third_person_view": OpenCVCameraConfig(index_or_path=0, width=1280, height=720, fps=30)
-	}
+    parser.add_argument(
+                "--fps",
+                type=int,
+                required=True,
+        )
+    parser.add_argument(
+                "--save-path",
+                type=str,
+                required=True,
+        )
+    args = parser.parse_args()
+    episode_num = args.episode_number
+    total_episodes_num = args.total_episodes_number
 
-	boss_config = SO101LeaderConfig(
-	    port="/dev/tty.usbmodem58FA0919711",
-	    id="koval_los",
-	)
+    rab = get_follower()
+    rab.connect()
+    boss = get_leader()
+    boss.connect()
+    listener, event = init_listeners()
+
+    record_config = {
+        'leader': boss,
+        'follower': rab,
+        'fps': args.fps,
+        'save_path': args.save_path,
+    }
+    logging.info(f"System is ready. Recording {total_episodes_num} episodes")
+
+    while episode_num <= total_episodes_num:
+        episode_data, status = record_episode(record_config, event)
+        if status['stop']:
+            logging.info(f"Stopped recording")
+            break
+        if status['repeat']:
+            logging.info(f"Repeating recording for {episode_num}")
+            event['repeat'] = False
+            continue
+
+        event['next'] = False
+        save_episode_data(episode_data, episode_num, record_config)
+        episode_num += 1
 
 
-	rab_config = SO101FollowerConfig(
-	    port="/dev/tty.usbmodem58FA0930111",
-	    id="koval_pes",
-	    cameras=camera_config
-	)
-
-
-	rab = SO101Follower(rab_config)
-	boss = SO101Leader(boss_config)
+    listener.stop()
+    rab.disconnect()
+    boss.disconnect()
 
 
 
-
-
-	listener, event = init_listeners()
-	listener.stop()
-
-
-def record_episode(event):
-	while True:	
-		if event["stop"] or event["delete"]:
-			break
-		if event["next"]:
-			# save data
-			break
-			
-	logging.info(f"Last demo to save: #{demo_number - 1}")
-	listener.stop()
 
 
 
