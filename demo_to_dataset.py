@@ -58,7 +58,7 @@ def main():
             chunk = list()
             for action in robot_states[ind:ind + chunk_size]:
                 chunk.append(' '.join(map(str, action)))
-            robot_states_cvs.append([ind + cnt, ' '.join(map(str,state)), '|'.join(chunk)])
+            robot_states_cvs.append([ind + cnt,  ' '.join(map(str,state)), ' '.join(chunk)])
         print(len(robot_states_cvs))
         with open(os.path.join(save_path, "states.csv"), "a", newline="") as f:
             writer = csv.writer(f)
