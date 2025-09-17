@@ -30,5 +30,6 @@ POLICY_CONFIG = TConfig({
     "eps": 1e-9,
     "beta1": 0.9,
     "beta2": 0.98,
-    "lr": 1e-5
+    "lr": 1e-5,
+    "batch_size": 8
 })
