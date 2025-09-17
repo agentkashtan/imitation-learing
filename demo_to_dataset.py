@@ -13,6 +13,28 @@ def save_jpeg(jpeg_bytes, filename, save_dir):
         f.write(jpeg_bytes)
 
 
+def compute_stats(demos_path, chunk_size):
+    all_states = []
+    for filename in os.listdir(demos_path):
+        if not filename.endswith(".hdf5"):
+            continue
+
+        file_path = os.path.join(demos_path, filename)
+        with h5py.File(file_path, "r") as f:
+            robot_states = np.array(f["robot_state"], dtype=np.float32)
+            dp_num = len(robot_states) - chunk_size
+            all_states.append(robot_states[:dp_num])
+
+    all_states = np.vstack(all_states)
+
+    mean = np.mean(all_states, axis=0)
+    std = np.std(all_states, axis=0)
+
+    print("Mean per joint:", mean)
+    print("Std per joint:", std)
+
+    return mean, std
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -32,6 +54,8 @@ def main():
 
     os.makedirs(save_path, exist_ok=True)
     cnt = 0
+
+    mean, std = compute_stats(demos_path, chunk_size)
 
     with open(os.path.join(save_path, "states.csv"), "a", newline="") as f:
         writer = csv.writer(f)
@@ -57,9 +81,12 @@ def main():
         for ind, state in enumerate(robot_states[:dp_num]):
             chunk = list()
             for action in robot_states[ind:ind + chunk_size]:
-                chunk.append(' '.join(map(str, action)))
-            robot_states_cvs.append([ind + cnt,  ' '.join(map(str,state)), ' '.join(chunk)])
-        print(len(robot_states_cvs))
+                normalized_action = [(val - mean[j]) / std[j] for j,val in enumerate(action)]
+                chunk.append(' '.join(map(str, normalized_action)))
+
+            normalized_state = [(val - mean[j]) / std[j] for j,val in enumerate(state)]
+            robot_states_cvs.append([ind + cnt,  ' '.join(map(str,normalized_state)), ' '.join(chunk)])
+
         with open(os.path.join(save_path, "states.csv"), "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(robot_states_cvs)

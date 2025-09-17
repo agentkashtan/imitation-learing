@@ -28,13 +28,6 @@ CONFIG = {
         }
     }
 }
-"""
-'cameras': {
-    'third_person_view': OpenCVCameraConfig(index_or_path=0, width=640, height=480, fps=30),
-},
-"""
-
-
 
 
 def robot_state_names_to_ind(robot_state):
@@ -77,5 +70,5 @@ def get_leader():
     return SO101Leader(leader_config)
 
 
-def decode_jpeg(jpeg_bytes: np.ndarray) -> np.ndarray:
+def decode_jpeg(jpeg_bytes):
     return cv2.imdecode(jpeg_bytes, cv2.IMREAD_COLOR)
