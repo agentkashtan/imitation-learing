@@ -23,7 +23,7 @@ class Camera:
             if not ret:
                 continue
             with self.frame_lock:
-                self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                self.frame = frame
             self.cam_ready.set()
 
     def get_frame(self):

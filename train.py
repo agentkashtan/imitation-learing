@@ -19,9 +19,9 @@ def train():
     processor = AutoProcessor.from_pretrained(model_name)
 
     dataset = CustomDataset(
-        './demos/dataset/states.csv',
-        './demos/dataset',
-        ['third_person_view'],
+        './demos/demos/dataset/states.csv',
+        './demos/demos/dataset',
+        ['third_person_view', 'wrist_view'],
         processor
     )
     train_size = int(0.8 * len(dataset))
