@@ -22,12 +22,12 @@ def train():
     processor = AutoProcessor.from_pretrained(model_name)
     logging.info(f"#### ------> Loaded vision encoder")
     dataset = CustomDataset(
-        './demos/dataset/states.csv',
-        './demos/dataset',
-        ['third_person_view'],
+        './demos/demos/dataset/states.csv',
+        './demos/demos/dataset',
+        ['third_person_view', 'wrist_view'],
         processor
     )
-    train_size = int(0.8 * len(dataset))
+    train_size = int(0.95 * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -37,7 +37,12 @@ def train():
     logging.info(f'#### ------> Using device: {device}')
     policy = Trener(vision_encoder, POLICY_CONFIG)
     policy.to(device)
+    # continue from checkpoint
+    checkpoint = torch.load(f"{WEIGHTS_PATH}/model_weights_epoch_40.pt", map_location=device)
 
+    # Restore model weights
+    policy.load_state_dict(checkpoint["model_state_dict"])
+    
     optimizer = torch.optim.Adam(
         policy.parameters(),
         lr=POLICY_CONFIG["lr"],
@@ -45,7 +50,9 @@ def train():
         eps=POLICY_CONFIG["eps"]
     )
     loss_fn = torch.nn.MSELoss()
-
+    total_params = sum(p.numel() for p in policy.parameters())
+    trainable_params = sum(p.numel() for p in policy.parameters() if p.requires_grad)
+    logging.info(f'### ------> Total params: {total_params}; trainable params: {trainable_params}')
     logging.info(f'#### ------> Starting training: {POLICY_CONFIG["epoch_num"]} epochs')
     for epoch in range(POLICY_CONFIG["epoch_num"]):
         policy.train()
@@ -77,14 +84,14 @@ def train():
         print(f"Epoch {epoch+1:02d}/{POLICY_CONFIG['epoch_num']} "
               f"| Train Loss: {avg_train_loss:.4f} "
               f"| Val Loss: {avg_val_loss:.4f}")
-        if (epoch + 1) % 5 == 0 or epoch + 1 == POLICY_CONFIG["epoch_num"]:
+        if (epoch + 1) % 1 == 0 or epoch + 1 == POLICY_CONFIG["epoch_num"]:
             torch.save({
-                "epoch": epoch + 1,
+                "epoch": epoch + 1 + 40,
                 "model_state_dict": policy.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "training_loss": total_loss / max(1, len(train_loader)),
                 "validation_loss": val_total_loss / max(1, len(val_loader))
-            }, f'{WEIGHTS_PATH}/model_weights_epoch_{epoch + 1}.pt')
+            }, f'{WEIGHTS_PATH}/model_weights_epoch_{epoch + 1 + 40}.pt')
 
 
 if __name__ == "__main__":

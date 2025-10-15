@@ -25,11 +25,11 @@ POLICY_CONFIG = TConfig({
     "d_internal": 1024,
     "encoder_num": 4,
     "decoder_num": 7,
-    'cam_keys': ['third_person_view'],
-    'epoch_num': 10,
+    'cam_keys': ['third_person_view', 'wrist_view'],
+    'epoch_num': 45,
     "eps": 1e-9,
     "beta1": 0.9,
     "beta2": 0.98,
     "lr": 1e-5,
-    "batch_size": 8
+    "batch_size": 64
 })

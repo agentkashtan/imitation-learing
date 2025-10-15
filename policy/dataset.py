@@ -29,6 +29,7 @@ class CustomDataset(Dataset):
         item = dict(self.dataset[index])
         for cam_key in self.cam_keys:
             img = cv2.imread(f"{self.imgs_path}/{cam_key}_{item['index']}.jpg")
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             proc = self.img_processor(images=img, return_tensors="pt")["pixel_values"].squeeze()
             item[cam_key] = proc
         return item
