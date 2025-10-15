@@ -49,7 +49,6 @@ def record_episode(
             'offset': i * 700
         } for i, (cam_key, _)  in enumerate(config['follower'].cameras.items())
     }
-    print(window_positions)
     while True:
         loop_start = time.perf_counter()
         if event["stop"] or event["repeat"] or event["next"]:
@@ -61,7 +60,6 @@ def record_episode(
             'robot_state_follower': robot_state_names_to_ind(follower_obs),
             'robot_state_leader': robot_state_names_to_ind(action),
         }
-        print(data)
         for cam_key, _ in config['follower'].cameras.items():
             data[cam_key] = follower_obs[cam_key]
             img = data[cam_key]

@@ -1,5 +1,6 @@
 import logging
 import os
+import argparse
 
 import torch
 from sklearn.model_selection import train_test_split
@@ -13,10 +14,20 @@ from system_config import CONFIG
 
 
 def train():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--checkpoint-filename",
+        type=str,
+        required=False,
+    )
+    args = parser.parse_args()
+    checkpoint_filename = args.checkpoint_filename
+
+    WEIGHTS_PATH = './weights'
     logging.basicConfig(level=logging.INFO)
     batch_size = CONFIG['training_config'].batch_size
-    os.makedirs('./weights', exist_ok=True)
-    WEIGHTS_PATH = './weights'
+    os.makedirs(WEIGHTS_PATH, exist_ok=True)
     model_name = 'google/siglip-so400m-patch14-224'
     vision_encoder = SiglipVisionModel.from_pretrained(model_name)
     processor = AutoProcessor.from_pretrained(model_name)
@@ -38,10 +49,12 @@ def train():
     policy = Trener(vision_encoder, CONFIG['training_config'])
     policy.to(device)
     # continue from checkpoint
-    checkpoint = torch.load(f"{WEIGHTS_PATH}/model_weights_epoch_40.pt", map_location=device)
-
-    # Restore model weights
-    policy.load_state_dict(checkpoint["model_state_dict"])
+    if checkpoint_filename is not None:
+        checkpoint = torch.load(os.path.join(WEIGHTS_PATH, checkpoint_filename), map_location=device)
+        policy.load_state_dict(checkpoint["model_state_dict"])
+        epoch_num = checkpoint["epoch_num"]
+    else:
+        epoch_num = 1
     
     optimizer = torch.optim.Adam(
         policy.parameters(),
@@ -53,11 +66,11 @@ def train():
     total_params = sum(p.numel() for p in policy.parameters())
     trainable_params = sum(p.numel() for p in policy.parameters() if p.requires_grad)
     logging.info(f'### ------> Total params: {total_params}; trainable params: {trainable_params}')
-    logging.info(f'#### ------> Starting training: {CONFIG['training_config'].epoch_num} epochs')
-    for epoch in range(CONFIG['training_config'].epoch_num):
+    logging.info(f'#### ------> Starting training: {CONFIG["training_config"].epoch_num} epochs')
+    for _ in range(CONFIG['training_config'].epoch_num):
         policy.train()
         total_loss = 0
-        for batch in tqdm(train_loader, desc=f'processing epoch: {epoch + 1}', leave=False):
+        for batch in tqdm(train_loader, desc=f'processing epoch: {epoch_num}', leave=False):
             optimizer.zero_grad()
             del batch['index']
             for key, value in batch.items():
@@ -81,17 +94,18 @@ def train():
                 val_total_loss += loss.item()
         avg_train_loss = total_loss / len(train_loader)
         avg_val_loss = val_total_loss / len(val_loader)
-        print(f"Epoch {epoch+1:02d}/{CONFIG['training_config'].epoch_num} "
+        print(f"Epoch {epoch_num:02d}/{CONFIG['training_config'].epoch_num} "
               f"| Train Loss: {avg_train_loss:.4f} "
               f"| Val Loss: {avg_val_loss:.4f}")
-        if (epoch + 1) % 1 == 0 or epoch + 1 == CONFIG['training_config'].epoch_num:
+        if epoch_num % 1 == 0 or epoch_num == CONFIG['training_config'].epoch_num:
             torch.save({
-                "epoch": epoch + 1 + 40,
+                "epoch": epoch_num,
                 "model_state_dict": policy.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "training_loss": total_loss / max(1, len(train_loader)),
                 "validation_loss": val_total_loss / max(1, len(val_loader))
-            }, f'{WEIGHTS_PATH}/model_weights_epoch_{epoch + 1 + 40}.pt')
+            }, f'{WEIGHTS_PATH}/model_weights_epoch_{epoch_num}.pt')
+        epoch_num += 1
 
 
 if __name__ == "__main__":
