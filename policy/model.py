@@ -171,7 +171,8 @@ class Trener(nn.Module):
       self.dropout = config.dropout
       self.config = config
       self.vision_encoder = vision_encoder
-
+      for param in self.vision_encoder.parameters():
+        param.requires_grad = False
       self.encoder = Encoder(config.d_model, config.h, config.d_internal, config.dropout, config.encoder_num)
       self.decoder = Decoder(config.d_model, config.h, config.d_internal, config.dropout, config.decoder_num)
       self.proj = ProjectionLayer(config.d_model, config.actions_dim)
