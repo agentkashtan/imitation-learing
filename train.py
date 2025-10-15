@@ -7,14 +7,14 @@ from transformers import AutoProcessor, AutoModel, SiglipVisionModel
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
-from policy.config import POLICY_CONFIG
 from policy.dataset import CustomDataset
 from policy.model import Trener
+from system_config import CONFIG
 
 
 def train():
     logging.basicConfig(level=logging.INFO)
-    batch_size = POLICY_CONFIG["batch_size"]
+    batch_size = CONFIG['training_config'].batch_size
     os.makedirs('./weights', exist_ok=True)
     WEIGHTS_PATH = './weights'
     model_name = 'google/siglip-so400m-patch14-224'
@@ -35,7 +35,7 @@ def train():
     logging.info(f'#### ------> Loaded dataset: training size: {train_dataset.__len__()}; batch size: {batch_size}; number of batches: {len(train_loader)}')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'#### ------> Using device: {device}')
-    policy = Trener(vision_encoder, POLICY_CONFIG)
+    policy = Trener(vision_encoder, CONFIG['training_config'])
     policy.to(device)
     # continue from checkpoint
     checkpoint = torch.load(f"{WEIGHTS_PATH}/model_weights_epoch_40.pt", map_location=device)
@@ -45,16 +45,16 @@ def train():
     
     optimizer = torch.optim.Adam(
         policy.parameters(),
-        lr=POLICY_CONFIG["lr"],
-        betas=(POLICY_CONFIG["beta1"], POLICY_CONFIG["beta2"]),
-        eps=POLICY_CONFIG["eps"]
+        lr=CONFIG['training_config'].lr,
+        betas=(CONFIG['training_config'].beta1, CONFIG['training_config'].beta2),
+        eps=CONFIG['training_config'].eps
     )
     loss_fn = torch.nn.MSELoss()
     total_params = sum(p.numel() for p in policy.parameters())
     trainable_params = sum(p.numel() for p in policy.parameters() if p.requires_grad)
     logging.info(f'### ------> Total params: {total_params}; trainable params: {trainable_params}')
-    logging.info(f'#### ------> Starting training: {POLICY_CONFIG["epoch_num"]} epochs')
-    for epoch in range(POLICY_CONFIG["epoch_num"]):
+    logging.info(f'#### ------> Starting training: {CONFIG['training_config'].epoch_num} epochs')
+    for epoch in range(CONFIG['training_config'].epoch_num):
         policy.train()
         total_loss = 0
         for batch in tqdm(train_loader, desc=f'processing epoch: {epoch + 1}', leave=False):
@@ -81,10 +81,10 @@ def train():
                 val_total_loss += loss.item()
         avg_train_loss = total_loss / len(train_loader)
         avg_val_loss = val_total_loss / len(val_loader)
-        print(f"Epoch {epoch+1:02d}/{POLICY_CONFIG['epoch_num']} "
+        print(f"Epoch {epoch+1:02d}/{CONFIG['training_config'].epoch_num} "
               f"| Train Loss: {avg_train_loss:.4f} "
               f"| Val Loss: {avg_val_loss:.4f}")
-        if (epoch + 1) % 1 == 0 or epoch + 1 == POLICY_CONFIG["epoch_num"]:
+        if (epoch + 1) % 1 == 0 or epoch + 1 == CONFIG['training_config'].epoch_num:
             torch.save({
                 "epoch": epoch + 1 + 40,
                 "model_state_dict": policy.state_dict(),

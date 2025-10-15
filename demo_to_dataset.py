@@ -7,6 +7,8 @@ import cv2
 import numpy as np
 import h5py
 
+from system_config import CONFIG
+
 
 def save_jpeg(jpeg_bytes, filename, save_dir):
     with open(os.path.join(save_dir, filename + '.jpg'), 'wb') as f:
@@ -32,7 +34,6 @@ def compute_stats(demos_path, chunk_size):
 
     print("Mean per joint:", mean)
     print("Std per joint:", std)
-
     return mean, std
 
 def main():
@@ -42,19 +43,12 @@ def main():
         type=str,
         required=True,
     )
-    parser.add_argument(
-        "--chunk-size",
-        type=int,
-        required=True,
-    )
     args = parser.parse_args()
     demos_path = args.demos_path
     save_path = os.path.join(demos_path, 'dataset')
-    chunk_size = args.chunk_size
-
+    chunk_size = CONFIG['training_config'].prediction_horizon
     os.makedirs(save_path, exist_ok=True)
     cnt = 0
-
     mean, std = compute_stats(demos_path, chunk_size)
 
     with open(os.path.join(save_path, "states.csv"), "a", newline="") as f:

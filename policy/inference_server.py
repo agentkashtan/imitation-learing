@@ -11,8 +11,7 @@ from sklearn.model_selection import train_test_split
 from transformers import AutoProcessor, AutoModel, SiglipVisionModel
 from torch.utils.data import DataLoader, random_split
 
-from policy.config import POLICY_CONFIG
-from policy.dataset import CustomDataset
+from system_config import CONFIG
 from policy.model import Trener
 
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +40,7 @@ def main():
     img_processor = AutoProcessor.from_pretrained(model_name)
 
     logging.info(f'####------> Using device: {device}')
-    policy = Trener(vision_encoder, POLICY_CONFIG)
+    policy = Trener(vision_encoder, CONFIG['training_config'])
     policy.to(device)
     checkpoint = torch.load(weights_path, map_location=device)
     policy.load_state_dict(checkpoint["model_state_dict"])

@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import h5py
 
-from system_config import get_leader, get_follower, CONFIG, robot_state_names_to_ind, wait_
-
+from utils import get_leader, get_follower, robot_state_names_to_ind, wait_
+from system_config import CONFIG
 
 def init_listeners():
     event = {
@@ -107,11 +107,6 @@ def main():
                 required=True,
         )
     parser.add_argument(
-                "--fps",
-                type=int,
-                required=True,
-        )
-    parser.add_argument(
                 "--save-path",
                 type=str,
                 required=True,
@@ -129,7 +124,7 @@ def main():
     record_config = {
         'leader': boss,
         'follower': rab,
-        'fps': args.fps,
+        'fps': CONFIG['fps'],
         'save_path': args.save_path,
     }
     logging.info(f"\n\nSystem is ready. Recording {total_episodes_num} episodes")

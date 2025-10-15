@@ -5,20 +5,8 @@ import struct
 import logging
 import json
 
-from system_config import get_leader, get_follower, CONFIG, robot_state_names_to_ind, robot_state_ind_to_names, wait_
-
-
-RUN_CONFIG = {
-    'fps': 50,
-    'mean': [ 14.548566, -51.984997 , 57.5864  ,  59.111923,   2.572637 , 18.008852],
-    'std': [27.007866 ,35.0966 ,  23.20677,  10.410391 , 7.636047 ,10.38727 ],
-}
-
-def normalize_action(action, mean, std):
-    return [(val - mean[j]) / std[j] for j,val in enumerate(action)]
-
-def denormalize_action(action, mean, std):
-    return [val  * std[j] + mean[j] for j, val in enumerate(action)]
+from utils import get_follower, robot_state_names_to_ind, robot_state_ind_to_names, wait_, denormalize_action, normalize_action
+from system_config import CONFIG
 
 
 def run_actions(actions, follower):
@@ -27,15 +15,15 @@ def run_actions(actions, follower):
             robot_state_ind_to_names(
                 denormalize_action(
                     action,
-                    RUN_CONFIG['mean'],
-                    RUN_CONFIG['std']
+                    CONFIG['mean'],
+                    CONFIG['std']
                 )
             )
         )
-        wait_(1 / RUN_CONFIG['fps'])
+        wait_(1 / CONFIG['fps'])
 
 def get_next_actions(observation, socket_in, socket_out):
-    observation["robot_state"] = normalize_action(observation["robot_state"], RUN_CONFIG['mean'], RUN_CONFIG['std'])
+    observation["robot_state"] = normalize_action(observation["robot_state"], CONFIG['mean'], CONFIG['std'])
     robot_state_bytes = struct.pack("6f", *observation["robot_state"])
 
     camera_meta = []
