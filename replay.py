@@ -7,13 +7,8 @@ import cv2
 import numpy as np
 import h5py
 
-from system_config import get_follower, CONFIG, robot_state_ind_to_names, decode_jpeg
-
-
-def wait_(seconds):
-    end = time.perf_counter() + seconds
-    while time.perf_counter() < end:
-        pass
+from utils import get_follower, robot_state_ind_to_names, decode_jpeg, wait_
+from system_config import CONFIG
 
 
 def load_episode_data(save_path, episode_num):
@@ -21,7 +16,7 @@ def load_episode_data(save_path, episode_num):
         robot_states = np.array(f['robot_state'], dtype=np.float32)
         cameras_data = dict()
         for cam_key in list(f.keys()):
-            if cam_key == 'robot_state':
+            if cam_key == 'robot_state_follower' or cam_key == 'robot_state_leader':
                 continue
             frames = [decode_jpeg(jpeg_bytes) for jpeg_bytes in f[cam_key]]
             cameras_data[cam_key] = np.stack(frames, axis=0)
@@ -34,11 +29,6 @@ def main():
 
     parser.add_argument(
         "--episode-number",
-        type=int,
-        required=True,
-    )
-    parser.add_argument(
-        "--fps",
         type=int,
         required=True,
     )
@@ -57,7 +47,7 @@ def main():
         for cam_key, obs in cameras_data.items():
             img = cv2.cvtColor(obs[ind], cv2.COLOR_BGR2RGB)
             cv2.imshow(cam_key, img)
-        cv2.waitKey(1000 // args.fps)
+        cv2.waitKey(1000 // CONFIG['fps'])
 
     rab.disconnect()
 

@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import h5py
 
-from system_config import get_leader, get_follower, CONFIG, robot_state_names_to_ind, wait_
-
+from utils import get_leader, get_follower, robot_state_names_to_ind, wait_
+from system_config import CONFIG
 
 def init_listeners():
     event = {
@@ -49,7 +49,6 @@ def record_episode(
             'offset': i * 700
         } for i, (cam_key, _)  in enumerate(config['follower'].cameras.items())
     }
-    print(window_positions)
     while True:
         loop_start = time.perf_counter()
         if event["stop"] or event["repeat"] or event["next"]:
@@ -58,7 +57,8 @@ def record_episode(
         action = config['leader'].get_action()
         config['follower'].send_action(action)
         data = {
-            'robot_state': robot_state_names_to_ind(action),
+            'robot_state_follower': robot_state_names_to_ind(follower_obs),
+            'robot_state_leader': robot_state_names_to_ind(action),
         }
         for cam_key, _ in config['follower'].cameras.items():
             data[cam_key] = follower_obs[cam_key]
@@ -107,11 +107,6 @@ def main():
                 required=True,
         )
     parser.add_argument(
-                "--fps",
-                type=int,
-                required=True,
-        )
-    parser.add_argument(
                 "--save-path",
                 type=str,
                 required=True,
@@ -129,7 +124,7 @@ def main():
     record_config = {
         'leader': boss,
         'follower': rab,
-        'fps': args.fps,
+        'fps': CONFIG['fps'],
         'save_path': args.save_path,
     }
     logging.info(f"\n\nSystem is ready. Recording {total_episodes_num} episodes")
