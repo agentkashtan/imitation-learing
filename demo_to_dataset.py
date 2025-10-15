@@ -62,7 +62,6 @@ def main():
         writer.writerow(['index', 'robot_state', 'actions'])
 
     for filename in os.listdir(demos_path):
-        print(filename)
 
         if '.hdf5' not in filename:
             continue

@@ -29,34 +29,32 @@ def main():
     args = parser.parse_args()
     weights_path = args.weights_path
 
-
     context = zmq.Context()
     socket_in = context.socket(zmq.PULL)
     socket_in.bind("tcp://*:5555")
     socket_out = context.socket(zmq.PUSH)
-    socket_out.connect("tcp://10.40.33.115:5554")
-    logging.info("Inference Server started.")
+    socket_out.bind("tcp://*:5554")
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    """
     model_name = 'google/siglip-so400m-patch14-224'
     vision_encoder = SiglipVisionModel.from_pretrained(model_name)
     img_processor = AutoProcessor.from_pretrained(model_name)
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f'#### ------> Using device: {device}')
+    logging.info(f'####------> Using device: {device}')
     policy = Trener(vision_encoder, POLICY_CONFIG)
     policy.to(device)
     checkpoint = torch.load(weights_path, map_location=device)
     policy.load_state_dict(checkpoint["model_state_dict"])
     policy.eval()
-    """
+
+    logging.info("Inference Server started.")
 
     while True:
         parts = socket_in.recv_multipart()
         logging.info("Message received")
 
         input_data = dict()
-        input_data['robot_state'] = torch.tensor(struct.unpack("6f", parts[0]))
+        input_data['robot_state'] = torch.tensor(struct.unpack("6f", parts[0])).unsqueeze(0)
 
         meta = json.loads(parts[1].decode("utf-8"))
         camera_meta = meta["images"]
@@ -64,19 +62,21 @@ def main():
             cam_key = info["key"]
             jpg_bytes = parts[2 + i]
             img = cv2.imdecode(np.frombuffer(jpg_bytes, np.uint8), cv2.IMREAD_COLOR)
-            #proc = img_processor(images=img, return_tensors="pt")["pixel_values"].squeeze()
-            input_data[cam_key] = img
-            #cv2.imshow(cam_key, img)
-            #cv2.waitKey(1)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            proc = img_processor(images=img, return_tensors="pt")["pixel_values"]
+            input_data[cam_key] = proc
 
-        prediction  = [.228] * POLICY_CONFIG['actions_dim'] * POLICY_CONFIG['prediction_horizon']#= policy(batch)
-        msg_len = len(prediction)
+        for key, value in input_data.items():
+            input_data[key] = value.to(device)
+        with torch.no_grad():
+            prediction = policy(input_data)
+            prediction = prediction.view(prediction.shape[0], -1).squeeze().cpu().numpy()
+        msg_len = prediction.size
         msg = struct.pack(f"{msg_len}f", *prediction)
         socket_out.send_multipart([
             struct.pack("i", msg_len),
             msg
         ])
-
 
 if __name__ == "__main__":
     main()

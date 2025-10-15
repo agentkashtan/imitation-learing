@@ -8,13 +8,7 @@ import cv2
 import numpy as np
 import h5py
 
-from system_config import get_leader, get_follower, CONFIG, robot_state_names_to_ind, get_follower1
-
-
-def wait_(seconds):
-    end = time.perf_counter() + seconds
-    while time.perf_counter() < end:
-        pass
+from system_config import get_leader, get_follower, CONFIG, robot_state_names_to_ind, wait_
 
 
 def init_listeners():
@@ -25,6 +19,11 @@ def init_listeners():
         "start": False,
     }
     def on_press(key):
+        event["repeat"] = False
+        event["stop"] = False
+        event["next"] = False
+        event["start"] = False
+
         if key == keyboard.Key.backspace:
             event["repeat"] = True
         if key == keyboard.Key.esc:
@@ -33,6 +32,7 @@ def init_listeners():
             event["next"] = True
         if key == keyboard.Key.space:
             event["start"] = True
+
     listener = keyboard.Listener(on_press=on_press)
     listener.start()
     return listener, event
@@ -43,6 +43,13 @@ def record_episode(
         event
 ):
     episode_data = list()
+    window_positions = {
+        cam_key: {
+            'value': False,
+            'offset': i * 700
+        } for i, (cam_key, _)  in enumerate(config['follower'].cameras.items())
+    }
+    print(window_positions)
     while True:
         loop_start = time.perf_counter()
         if event["stop"] or event["repeat"] or event["next"]:
@@ -55,8 +62,11 @@ def record_episode(
         }
         for cam_key, _ in config['follower'].cameras.items():
             data[cam_key] = follower_obs[cam_key]
-            img = cv2.cvtColor(data[cam_key], cv2.COLOR_BGR2RGB)
+            img = data[cam_key]
             cv2.imshow(cam_key, img)
+            if not window_positions[cam_key]['value']:
+                window_positions[cam_key]['value'] = True
+                cv2.moveWindow(cam_key, window_positions[cam_key]['offset'], 100)
         cv2.waitKey(1)
         episode_data.append(data)
         loop_time = time.perf_counter() - loop_start
