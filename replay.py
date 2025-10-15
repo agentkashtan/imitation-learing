@@ -16,7 +16,7 @@ def load_episode_data(save_path, episode_num):
         robot_states = np.array(f['robot_state'], dtype=np.float32)
         cameras_data = dict()
         for cam_key in list(f.keys()):
-            if cam_key == 'robot_state':
+            if cam_key == 'robot_state_follower' or cam_key == 'robot_state_leader':
                 continue
             frames = [decode_jpeg(jpeg_bytes) for jpeg_bytes in f[cam_key]]
             cameras_data[cam_key] = np.stack(frames, axis=0)

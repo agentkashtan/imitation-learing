@@ -42,6 +42,7 @@ CONFIG = {
     'fps': 50,
     'mean': [14.548566, -51.984997, 57.5864, 59.111923, 2.572637, 18.008852],
     'std': [27.007866, 35.0966, 23.20677, 10.410391, 7.636047, 10.38727],
+    'robot_state_field': 'robot_state_follower', # robot_state_leader; whether to use follower or leader state as target
     'training_config': TConfig({
         "d_model": 512,
         "dropout": 0.1,

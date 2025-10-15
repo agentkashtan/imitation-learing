@@ -23,7 +23,7 @@ def compute_stats(demos_path, chunk_size):
 
         file_path = os.path.join(demos_path, filename)
         with h5py.File(file_path, "r") as f:
-            robot_states = np.array(f["robot_state"], dtype=np.float32)
+            robot_states = np.array(f[CONFIG['robot_state_field']], dtype=np.float32)
             dp_num = len(robot_states) - chunk_size
             all_states.append(robot_states[:dp_num])
 
@@ -60,10 +60,10 @@ def main():
         if '.hdf5' not in filename:
             continue
         with h5py.File(os.path.join(demos_path, filename), "r") as f:
-            robot_states = np.array(f['robot_state'], dtype=np.float32)
+            robot_states = np.array(f[CONFIG['robot_state_field']], dtype=np.float32)
             dp_num = len(robot_states) - chunk_size
             for cam_key in list(f.keys()):
-                if cam_key == 'robot_state':
+                if cam_key == 'robot_state_leader' or cam_key == 'robot_state_follower':
                     continue
                 local_cnt = 0
                 for frame in f[cam_key][:dp_num]:

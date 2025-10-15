@@ -58,8 +58,10 @@ def record_episode(
         action = config['leader'].get_action()
         config['follower'].send_action(action)
         data = {
-            'robot_state': robot_state_names_to_ind(action),
+            'robot_state_follower': robot_state_names_to_ind(follower_obs),
+            'robot_state_leader': robot_state_names_to_ind(action),
         }
+        print(data)
         for cam_key, _ in config['follower'].cameras.items():
             data[cam_key] = follower_obs[cam_key]
             img = data[cam_key]
