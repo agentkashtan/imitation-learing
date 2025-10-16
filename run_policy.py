@@ -75,6 +75,8 @@ def main():
         }
         for cam_key, _ in follower.cameras.items():
             current_state['images'][cam_key] = observation[cam_key]
+            cv2.imshow(cam_key, observation[cam_key])
+            cv2.waitKey(1)
 
         actions = get_next_actions(current_state, socket_in, socket_out)
         run_actions(actions, follower)
