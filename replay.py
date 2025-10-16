@@ -13,10 +13,13 @@ from system_config import CONFIG
 
 def load_episode_data(save_path, episode_num):
     with h5py.File(os.path.join(save_path, f"{episode_num}.hdf5"), "r") as f:
+        # TODO fix robot_state field
         robot_states = np.array(f['robot_state'], dtype=np.float32)
         cameras_data = dict()
         for cam_key in list(f.keys()):
-            if cam_key == 'robot_state_follower' or cam_key == 'robot_state_leader':
+            # TODO fix robot_state field
+            # if cam_key == 'robot_state_follower' or cam_key == 'robot_state_leader':
+            if cam_key == 'robot_state':
                 continue
             frames = [decode_jpeg(jpeg_bytes) for jpeg_bytes in f[cam_key]]
             cameras_data[cam_key] = np.stack(frames, axis=0)
@@ -39,17 +42,16 @@ def main():
     )
     args = parser.parse_args()
 
-    rab = get_follower()
-    rab.connect()
+    #rab = get_follower()
+    #rab.connect()
     robot_states, cameras_data = load_episode_data(args.save_path, args.episode_number)
     for ind, robot_state in enumerate(robot_states):
-        rab.send_action(robot_state_ind_to_names(robot_state))
+        #rab.send_action(robot_state_ind_to_names(robot_state))
         for cam_key, obs in cameras_data.items():
-            img = cv2.cvtColor(obs[ind], cv2.COLOR_BGR2RGB)
-            cv2.imshow(cam_key, img)
+            cv2.imshow(cam_key, obs[ind])
         cv2.waitKey(1000 // CONFIG['fps'])
 
-    rab.disconnect()
+    #rab.disconnect()
 
 if __name__ == "__main__":
     main()

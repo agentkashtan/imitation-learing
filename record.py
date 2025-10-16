@@ -76,7 +76,7 @@ def save_episode_data(episode_data, episode_num, config):
     logging.info(f"Saving recording for {episode_num}")
     os.makedirs(config['save_path'], exist_ok=True)
     with h5py.File(os.path.join(config['save_path'], f"{episode_num}.hdf5"), "w") as f:
-        robot_state = np.array([x['robot_state'] for x in episode_data], dtype=np.float32)
+        robot_state = np.array([x[CONFIG['robot_state_field']] for x in episode_data], dtype=np.float32)
         f.create_dataset("robot_state", data=robot_state)
         logging.info(f"Episode #{episode_num}; saving {len(robot_state)} data points")
         for cam_key, _ in config['follower'].cameras.items():

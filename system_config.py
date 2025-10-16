@@ -40,8 +40,10 @@ CONFIG = {
     },
     'cam_keys': ['third_person_view', 'wrist_view'],
     'fps': 50,
-    'mean': [14.548566, -51.984997, 57.5864, 59.111923, 2.572637, 18.008852],
-    'std': [27.007866, 35.0966, 23.20677, 10.410391, 7.636047, 10.38727],
+    #'mean': [14.548566, -51.984997, 57.5864, 59.111923, 2.572637, 18.008852],
+    #'std': [27.007866, 35.0966, 23.20677, 10.410391, 7.636047, 10.38727],
+    'mean': [-0.10740731 ,-42.23653  ,   50.264027 ,   57.524323  ,  7.0488434, 25.104515],
+    'std': [29.200237, 34.04495 , 25.577188 ,12.534714, 16.195923 ,14.92839],
     'robot_state_field': 'robot_state_follower', # robot_state_leader; whether to use follower or leader state as target
     'training_config': TConfig({
         "d_model": 512,
@@ -54,6 +56,7 @@ CONFIG = {
         "W_patches": 16,
         "d_internal": 1024,
         "encoder_num": 4,
+        'cam_keys': ['third_person_view', 'wrist_view'],
         "decoder_num": 7,
         'epoch_num': 45,
         "eps": 1e-9,
