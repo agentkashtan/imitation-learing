@@ -33,8 +33,8 @@ def train():
     processor = AutoProcessor.from_pretrained(model_name)
     logging.info(f"#### ------> Loaded vision encoder")
     dataset = CustomDataset(
-        './demos/demos/dataset/states.csv',
-        './demos/demos/dataset',
+        './demos/dataset/states.csv',
+        './demos/dataset',
         ['third_person_view', 'wrist_view'],
         processor
     )
@@ -52,8 +52,10 @@ def train():
     if checkpoint_filename is not None:
         checkpoint = torch.load(os.path.join(WEIGHTS_PATH, checkpoint_filename), map_location=device)
         policy.load_state_dict(checkpoint["model_state_dict"])
-        epoch_num = checkpoint["epoch_num"]
+        epoch_num = checkpoint["epoch"]
+        logging.info(f"Continue from epoch num: {epoch_num}")
     else:
+        logging.info("Traing from scratch")
         epoch_num = 1
     
     optimizer = torch.optim.Adam(
@@ -97,7 +99,7 @@ def train():
         print(f"Epoch {epoch_num:02d}/{CONFIG['training_config'].epoch_num} "
               f"| Train Loss: {avg_train_loss:.4f} "
               f"| Val Loss: {avg_val_loss:.4f}")
-        if epoch_num % 1 == 0 or epoch_num == CONFIG['training_config'].epoch_num:
+        if epoch_num % 3 == 0 or epoch_num == CONFIG['training_config'].epoch_num:
             torch.save({
                 "epoch": epoch_num,
                 "model_state_dict": policy.state_dict(),

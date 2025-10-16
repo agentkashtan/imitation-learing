@@ -58,11 +58,12 @@ CONFIG = {
         "encoder_num": 4,
         'cam_keys': ['third_person_view', 'wrist_view'],
         "decoder_num": 7,
-        'epoch_num': 45,
+        'epoch_num': 50,
         "eps": 1e-9,
         "beta1": 0.9,
         "beta2": 0.98,
         "lr": 1e-5,
-        "batch_size": 64
+        "batch_size": 64,
+        "cam_keys": ['third_person_view', 'wrist_view']
     })
 }
