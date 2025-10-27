@@ -94,10 +94,15 @@ The model was trained end-to-end using an **L2 loss** between predicted and grou
 The model was trained on **100 recorded demonstrations**, yielding **50,450 training samples** after chunking and sequence preparation, and was trained for **57 epochs**.
 A **5% validation split** was reserved to monitor performance and prevent overfitting during training.
 
+#### 📷 Data Collection Details
+  - **Cameras:** 30 FPS at 640 × 480 resolution  
+  - **Robot state and control rate:** 50 Hz  
+  - **Total demonstrations:** 100  
+  - **Total samples after chunking:** 50,450  
+
 #### ⚙️ Model and Hyperparameters
 
   - **Model objective:** L2 loss (mean squared error on joint positions)  
-  - **Training data:** 100 demonstrations → 50,450 samples  
   - **Epochs:** 57  
   - **Validation:** 5% of data reserved for validation  
 
