@@ -91,7 +91,7 @@ The decoder predicts a chunk of `k` future joint positions.
 ### 2.4 Training Setup
 
 The model was trained end-to-end using an **L2 loss** between predicted and ground-truth joint positions.  
-Training ran for **57 epochs**, using **100 recorded demonstrations**, which resulted in **50,450 training samples** after chunking and sequence preparation.  
+The model was trained on **100 recorded demonstrations**, yielding **50,450 training samples** after chunking and sequence preparation, and was trained for **57 epochs**.
 A **5% validation split** was reserved to monitor performance and prevent overfitting during training.
 
 #### ⚙️ Model and Hyperparameters
