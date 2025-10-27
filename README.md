@@ -30,8 +30,8 @@ Unlike ACT, this model does not use latent variables **z** and employs a **froze
 
 Each training sample includes:
 
-Observation: images from both the wrist-mounted and third-person cameras, together with the robot joint-state vector.
-
+  - Observation: images from both the wrist-mounted and third-person cameras, together with the robot joint-state vector.
+  - Targets: next k robot's joint states.
 ---
 
 ### 2.3 Model Architecture
